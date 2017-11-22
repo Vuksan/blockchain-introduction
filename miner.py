@@ -1,19 +1,21 @@
 import hashlib
+import time
+import datetime
 
-class UnminedBlock:
-    def __init__(self, timestamp, previousblockhash, target):
-        self.timestamp = timestamp
+class CandidateBlock:
+    def __init__(self, previousblockhash, timestamp, target):
         self.previousblockhash = previousblockhash
+        self.timestamp = timestamp
         self.target = target
 
 # In order to mine a block we need to find it's blockhash, and nonce
 class MinedBlock:
-    def __init__(self, unmined_block, blockhash, nonce):
-        self.blockhash = blockhash
-        self.timestamp = unmined_block.timestamp
-        self.previousblockhash = unmined_block.previousblockhash
+    def __init__(self, candidate_block, blockhash, nonce):
+        self.previousblockhash = candidate_block.previousblockhash
+        self.timestamp = candidate_block.timestamp
+        self.target = candidate_block.target
         self.nonce = nonce
-        self.target = unmined_block.target
+        self.blockhash = blockhash
     
     def __repr__(self):
         return "Blockhash: %s, nonce: %s" % (self.blockhash, self.nonce)
@@ -23,7 +25,7 @@ class MinedBlock:
 def mined(blockhash, target):
     return blockhash.startswith(target)
 
-def mine(unmined_block):
+def mine(candidate_block):
     blockhash = ""
     nonce = 0
 
@@ -40,30 +42,39 @@ def mine(unmined_block):
     #
     # So our nonce is 2875, and the blockhash is 0007ff67d9f21a7e153ee92fad6336a1e395c94db1a87221b4aca48507213b98
     # (we can omit zeroes = 7ff67d9f21a7e153ee92fad6336a1e395c94db1a87221b4aca48507213b98) 
-    while not mined(blockhash, unmined_block.target):
-        data_to_hash = unmined_block.previousblockhash + str(unmined_block.timestamp) + str(nonce)
+    while not mined(blockhash, candidate_block.target):
+        data_to_hash = candidate_block.previousblockhash + str(candidate_block.timestamp) + str(nonce)
         hash_func = hashlib.sha256(data_to_hash)
         blockhash = hash_func.hexdigest()
         nonce += 1
 
     # We decrement nonce by one because at the end of the while loop we increment it one time too many
-    return MinedBlock(unmined_block, blockhash, nonce-1)
+    return MinedBlock(candidate_block, blockhash, nonce-1)
 
 def transmit_to_network(block):
     print "I found a new block, yay!"
 
 if __name__ == "__main__":
-    target = raw_input("Enter target: ")
+    target = raw_input("Enter target: ") # Number of zeroes
+    # Current bitcoin target is 0x000000000000000000CE4B00000018817F447F4768816FBB724DFB562A217126 (18 zeroes)
 
-    block = UnminedBlock(
-        timestamp=1506280816, 
+    block = CandidateBlock(
         previousblockhash="674ccf292279cb232b613f5dc77041ce3da7e0fdfb20dfe9e4d190f05707a6b2", 
+        timestamp=1506280816, 
         target=target
     )
     
+    # Measure elapsed time
+    start_time = time.time()
+
     mined_block = mine(block)
+    
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+
     transmit_to_network(mined_block)
     print mined_block
+    print "Elapsed time: " + str(datetime.timedelta(seconds=elapsed_time))
 
 
 ### FAQ ###
