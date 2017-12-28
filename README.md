@@ -1,4 +1,4 @@
-# python-belgrade-meetup-12
+# blockchain-introduction
 Blockchain and python (2.7)
 
 ## miner.py
