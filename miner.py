@@ -1,3 +1,4 @@
+from __future__ import print_function
 import hashlib
 import time
 import datetime
@@ -23,6 +24,7 @@ class MinedBlock:
 # mined("000345", "000") -> True
 # mined("00345", "000") -> False
 def mined(blockhash, target):
+    print('.', end='')   # print a dot for each attempt
     return blockhash.startswith(target)
 
 def mine(candidate_block):
@@ -52,7 +54,7 @@ def mine(candidate_block):
     return MinedBlock(candidate_block, blockhash, nonce-1)
 
 def transmit_to_network(block):
-    print "I found a new block, yay!"
+    print("\nI found a new block, yay!")
 
 if __name__ == "__main__":
     target = raw_input("Enter target: ") # Number of zeroes
@@ -73,8 +75,8 @@ if __name__ == "__main__":
     elapsed_time = end_time - start_time
 
     transmit_to_network(mined_block)
-    print mined_block
-    print "Elapsed time: " + str(datetime.timedelta(seconds=elapsed_time))
+    print(mined_block)
+    print("Elapsed time: " + str(datetime.timedelta(seconds=elapsed_time)))
 
 
 ### FAQ ###
