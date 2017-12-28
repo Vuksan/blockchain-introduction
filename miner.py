@@ -24,7 +24,6 @@ class MinedBlock:
 # mined("000345", "000") -> True
 # mined("00345", "000") -> False
 def mined(blockhash, target):
-    print('.', end='')   # print a dot for each attempt
     return blockhash.startswith(target)
 
 def mine(candidate_block):
@@ -48,13 +47,14 @@ def mine(candidate_block):
         data_to_hash = candidate_block.previousblockhash + str(candidate_block.timestamp) + str(nonce)
         hash_func = hashlib.sha256(data_to_hash)
         blockhash = hash_func.hexdigest()
+        print(blockhash, end=' ')   # print each attempt
         nonce += 1
 
     # We decrement nonce by one because at the end of the while loop we increment it one time too many
     return MinedBlock(candidate_block, blockhash, nonce-1)
 
 def transmit_to_network(block):
-    print("\nI found a new block, yay!")
+    print("\n\nI found a new block, yay!")
 
 if __name__ == "__main__":
     target = raw_input("Enter target: ") # Number of zeroes
