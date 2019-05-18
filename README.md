@@ -2,7 +2,8 @@
 Blockchain and python (2.7)
 
 ## miner.py
-This is a **simplified** miner written in python for demonstration purposes.
+This is a **simplified** miner written in python for demonstration purposes.  
+In order to run it execute: `python miner.py`
 
 ## sendtx.py
 This script is used to present how easily you can make a transaction on the blockchain.
