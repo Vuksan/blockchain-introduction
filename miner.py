@@ -1,35 +1,20 @@
-from __future__ import print_function
-import hashlib
+from hashlib import sha256
 import time
 import datetime
-
-class CandidateBlock:
-    def __init__(self, previousblockhash, timestamp, target):
-        self.previousblockhash = previousblockhash
-        self.timestamp = timestamp
-        self.target = target
-
-# In order to mine a block we need to find it's blockhash, and nonce
-class MinedBlock:
-    def __init__(self, candidate_block, blockhash, nonce):
-        self.previousblockhash = candidate_block.previousblockhash
-        self.timestamp = candidate_block.timestamp
-        self.target = candidate_block.target
-        self.nonce = nonce
-        self.blockhash = blockhash
-    
-    def __repr__(self):
-        return "Blockhash: %s, nonce: %s" % (self.blockhash, self.nonce)
+from model import CandidateBlock, MinedBlock
+from helper import generate_transactions
 
 # mined("000345", "000") -> True
 # mined("00345", "000") -> False
 def mined(blockhash, target):
     return blockhash.startswith(target)
 
-def mine(candidate_block):
+def mine(candidate_block, display_attempts=True):
     blockhash = ""
     nonce = 0
 
+    # Measure elapsed time
+    start_time = time.time()
     # Mining algorithm (simplified!):
     #
     # blockhash = sha256(previousblockhash + timestamp + nonce)
@@ -44,44 +29,47 @@ def mine(candidate_block):
     # So our nonce is 2875, and the blockhash is 0007ff67d9f21a7e153ee92fad6336a1e395c94db1a87221b4aca48507213b98
     # (we can omit zeroes = 7ff67d9f21a7e153ee92fad6336a1e395c94db1a87221b4aca48507213b98) 
     while not mined(blockhash, candidate_block.target):
-        data_to_hash = candidate_block.previousblockhash + str(candidate_block.timestamp) + str(nonce)
-        hash_func = hashlib.sha256(data_to_hash)
+        data_to_hash = candidate_block.previous_blockhash + str(candidate_block.timestamp) + str(nonce)
+        hash_func = sha256(data_to_hash.encode('utf-8'))
         blockhash = hash_func.hexdigest()
-        print(blockhash, end=' ')   # print each attempt
+        if display_attempts:
+            print(blockhash, end='\n')  # print each attempt
         nonce += 1
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print("\nMining time: " + str(datetime.timedelta(seconds=elapsed_time)))
 
     # We decrement nonce by one because at the end of the while loop we increment it one time too many
     return MinedBlock(candidate_block, blockhash, nonce-1)
 
 def transmit_to_network(block):
-    print("\n\nI found a new block, yay!")
+    print("\nI found a new block, yay!\n")
+    print(block)
+
+def generate_genesis_block(target, transactions, height=0, display_attempts=True):
+    candidate_block = CandidateBlock(
+        height=height,
+        previous_blockhash="674ccf292279cb232b613f5dc77041ce3da7e0fdfb20dfe9e4d190f05707a6b2", 
+        timestamp=1506280816, 
+        target=target,
+        transactions=list()
+    )
+    return mine(candidate_block, display_attempts)
 
 if __name__ == "__main__":
-    target = raw_input("Enter target: ") # Number of zeroes
+    target = input("Enter target: ") # Number of zeroes
     # Current bitcoin target is 0x000000000000000000CE4B00000018817F447F4768816FBB724DFB562A217126 (18 zeroes)
 
-    block = CandidateBlock(
-        previousblockhash="674ccf292279cb232b613f5dc77041ce3da7e0fdfb20dfe9e4d190f05707a6b2", 
-        timestamp=1506280816, 
-        target=target
-    )
-    
-    # Measure elapsed time
-    start_time = time.time()
-
-    mined_block = mine(block)
-    
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-
+    # Generate several transactions
+    transactions = generate_transactions(10)
+    mined_block = generate_genesis_block(target, transactions)
     transmit_to_network(mined_block)
-    print(mined_block)
-    print("Elapsed time: " + str(datetime.timedelta(seconds=elapsed_time)))
 
 
 ### FAQ ###
 
-# What is target?
+# What does target represent?
 #
 # - Target is simply a number of zeroes with which the mined blockhash needs to start with in order for the mining to succeed.
 
@@ -91,7 +79,7 @@ if __name__ == "__main__":
 
 # What is nonce?
 #
-# - The nonce is a 32-bit field whose value we constantly change until we "win the lottery" and mine new block
+# - The nonce is a 32-bit field whose value we constantly change until we "win the lottery" and mine a new block
 # (we increment it from 0 in this example).
 
 # What happens if 2 miners mine the same block at the same time?
