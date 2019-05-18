@@ -71,7 +71,7 @@ if __name__ == "__main__":
 
 # What does target represent?
 #
-# - Target is simply a number of zeroes with which the mined blockhash needs to start with in order for the mining to succeed.
+# - Target is simply a number of zeroes with which the mined blockhash needs to start in order for the mining to succeed.
 
 # Why are there no zeroes in front of a blockhash then?
 #
