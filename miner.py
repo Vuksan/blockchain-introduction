@@ -65,35 +65,3 @@ if __name__ == "__main__":
     transactions = generate_transactions(10)
     mined_block = generate_genesis_block(target, transactions)
     transmit_to_network(mined_block)
-
-
-### FAQ ###
-
-# What does target represent?
-#
-# - Target is simply a number of zeroes with which the mined blockhash needs to start in order for the mining to succeed.
-
-# Why are there no zeroes in front of a blockhash then?
-#
-# - There are, but they are omitted.
-
-# What is nonce?
-#
-# - The nonce is a 32-bit field whose value we constantly change until we "win the lottery" and mine a new block
-# (we increment it from 0 in this example).
-
-# What happens if 2 miners mine the same block at the same time?
-#
-# - When 2 blocks are generated at the same time, the agreement on which block is the "winner" depends on the next block.
-# The community agrees on the "longest" chain. Sometimes there are multiple chains of equal length, 
-# and that's why it can be important to wait for a number of block confirmations, 
-# before considering that a transaction will not be undone by a chain reorganization.
-
-# Is target always the same?
-#
-# - No, it changes (every x blocks) depending on how fast or slow the network was until that point.
-
-# So python cannot be used with the blockchain?
-#
-# - Sure it can, in fact many blockchain applications are written in python,
-# the most popular being bitcoin electrum wallet.
