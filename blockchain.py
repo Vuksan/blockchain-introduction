@@ -1,4 +1,5 @@
 from time import time
+from datetime import timedelta
 from random import randint
 from model import CandidateBlock, MinedBlock, TransactionPool
 from helper import generate_transactions
@@ -18,8 +19,11 @@ if __name__ == "__main__":
     transactions = generate_transactions(int(max_height) * MAX_TRANSACTIONS_PER_BLOCK)
     tx_pool = TransactionPool(transactions)
 
+    # Measure elapsed time until blockchain with desired height is created
+    start_time = time()
     # First create Genesis block (without transactions)
     mined_block = generate_genesis_block(target, list(), current_height, False)
+    blockchain.append(mined_block)
     transmit_to_network(mined_block)
     current_height += 1
 
@@ -36,6 +40,10 @@ if __name__ == "__main__":
 
         candidate_block = CandidateBlock(current_height, mined_block.blockhash, time(), target, include_txs)
         mined_block = mine(candidate_block, False)
+        blockchain.append(mined_block)
         transmit_to_network(mined_block)
 
         current_height += 1
+
+    elapsed_time = time() - start_time
+    print("\nBlockchain creation time: " + str(timedelta(seconds=elapsed_time)))

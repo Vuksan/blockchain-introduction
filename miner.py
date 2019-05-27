@@ -36,8 +36,7 @@ def mine(candidate_block, display_attempts=True):
             print(blockhash, end='\n')  # print each attempt
         nonce += 1
 
-    end_time = time.time()
-    elapsed_time = end_time - start_time
+    elapsed_time = time.time() - start_time
     print("\nMining time: " + str(datetime.timedelta(seconds=elapsed_time)))
 
     # We decrement nonce by one because at the end of the while loop we increment it one time too many
