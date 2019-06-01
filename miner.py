@@ -1,8 +1,10 @@
 from hashlib import sha256
-import time
-import datetime
-from model import CandidateBlock, MinedBlock
-from helper import generate_transactions
+from time import time
+from datetime import timedelta
+from model import BlockHeader, CandidateBlock, MinedBlock, generate_transactions
+from helper import hash_for_me, create_merkle_root
+
+BLOCK_VERSION = "v1.0"
 
 # mined("000345", "000") -> True
 # mined("00345", "000") -> False
@@ -11,11 +13,11 @@ def mined(blockhash, target):
 
 def mine(candidate_block, display_attempts=True):
     blockhash = ""
-    nonce = 0
+    block_header = candidate_block.block_header
 
     # Measure elapsed time
-    start_time = time.time()
-    # Mining algorithm (simplified!):
+    start_time = time()
+    # Mining algorithm (simplified example!):
     #
     # blockhash = sha256(previousblockhash + timestamp + nonce)
     # 23tea1... = 674ccf...7a6b2 + 1506280816 + 0
@@ -28,39 +30,39 @@ def mine(candidate_block, display_attempts=True):
     #
     # So our nonce is 2875, and the blockhash is 0007ff67d9f21a7e153ee92fad6336a1e395c94db1a87221b4aca48507213b98
     # (we can omit zeroes = 7ff67d9f21a7e153ee92fad6336a1e395c94db1a87221b4aca48507213b98) 
-    while not mined(blockhash, candidate_block.target):
-        data_to_hash = candidate_block.previous_blockhash + str(candidate_block.timestamp) + str(nonce)
-        hash_func = sha256(data_to_hash.encode('utf-8'))
-        blockhash = hash_func.hexdigest()
+    while True:
+        data_to_hash = block_header.version + block_header.previous_blockhash \
+            + str(block_header.timestamp) + block_header.merkle_root \
+            + block_header.target + str(block_header.nonce)
+        blockhash = hash_for_me(data_to_hash)
+        if mined(blockhash, block_header.target):
+            break
         if display_attempts:
-            print(blockhash, end='\n')  # print each attempt
-        nonce += 1
+            print(blockhash)  # print each attempt
+        block_header.nonce += 1
 
-    elapsed_time = time.time() - start_time
-    print("\nMining time: " + str(datetime.timedelta(seconds=elapsed_time)))
+    elapsed_time = time() - start_time
+    print("\nMining time: %s" % timedelta(seconds=elapsed_time))
 
-    # We decrement nonce by one because at the end of the while loop we increment it one time too many
-    return MinedBlock(candidate_block, blockhash, nonce-1)
+    # Return new, mined block
+    return MinedBlock(candidate_block, blockhash)
 
 def transmit_to_network(block):
     print("\nI found a new block, yay!\n")
     print(block)
 
-def generate_genesis_block(target, transactions, height=0, display_attempts=True):
-    candidate_block = CandidateBlock(
-        height=height,
-        previous_blockhash="674ccf292279cb232b613f5dc77041ce3da7e0fdfb20dfe9e4d190f05707a6b2", 
-        timestamp=1506280816, 
-        target=target,
-        transactions=list()
-    )
+def generate_genesis_block(target, height=0, starting_nonce=0, display_attempts=True):
+    block_header = BlockHeader(BLOCK_VERSION, '', time(), '', target, starting_nonce)
+    candidate_block = CandidateBlock(height, block_header, list())
     return mine(candidate_block, display_attempts)
 
 if __name__ == "__main__":
     target = input("Enter target: ") # Number of zeroes
     # Current bitcoin target is 0x000000000000000000CE4B00000018817F447F4768816FBB724DFB562A217126 (18 zeroes)
-
-    # Generate several transactions
+    
     transactions = generate_transactions(10)
-    mined_block = generate_genesis_block(target, transactions)
+    merkle_root = create_merkle_root(transactions)
+    block_header = BlockHeader(BLOCK_VERSION, '', time(), merkle_root, target, 0)
+    candidate_block = CandidateBlock(0, block_header, transactions)
+    mined_block = mine(candidate_block)
     transmit_to_network(mined_block)

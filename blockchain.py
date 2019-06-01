@@ -1,8 +1,8 @@
 from time import time
 from datetime import timedelta
 from random import randint
-from model import CandidateBlock, MinedBlock, TransactionPool
-from helper import generate_transactions
+from model import BlockHeader, CandidateBlock, MinedBlock, generate_transactions
+from helper import create_merkle_root
 from miner import generate_genesis_block, mine, transmit_to_network
 
 MIN_TRANSACTIONS_PER_BLOCK = 1
@@ -16,13 +16,12 @@ if __name__ == "__main__":
 
     blockchain = list()
     # Initialize transaction (memory) pool
-    transactions = generate_transactions(int(max_height) * MAX_TRANSACTIONS_PER_BLOCK)
-    tx_pool = TransactionPool(transactions)
+    transaction_pool = generate_transactions(max_height * MAX_TRANSACTIONS_PER_BLOCK)
 
     # Measure elapsed time until blockchain with desired height is created
     start_time = time()
     # First create Genesis block (without transactions)
-    mined_block = generate_genesis_block(target, list(), current_height, False)
+    mined_block = generate_genesis_block(target=target, display_attempts=False)
     blockchain.append(mined_block)
     transmit_to_network(mined_block)
     current_height += 1
@@ -32,13 +31,14 @@ if __name__ == "__main__":
         print("==================================================================================================")
 
         # Randomly determine number of transactions to take from transaction pool for this block
-        tx_num = randint(MIN_TRANSACTIONS_PER_BLOCK, MAX_TRANSACTIONS_PER_BLOCK)
-        include_txs = tx_pool.transactions[:tx_num]
+        tx_num_in_block = randint(MIN_TRANSACTIONS_PER_BLOCK, MAX_TRANSACTIONS_PER_BLOCK)
+        include_txs = transaction_pool[:tx_num_in_block]
         # Remove them from transaction pool
-        tx_pool.transactions = tx_pool.transactions[tx_num+1:]
-        tx_pool.transaction_num -= tx_num
+        transaction_pool = transaction_pool[tx_num_in_block+1:]
 
-        candidate_block = CandidateBlock(current_height, mined_block.blockhash, time(), target, include_txs)
+        merkle_root = create_merkle_root(include_txs)
+        block_header = BlockHeader(mined_block.block_header.version, mined_block.blockhash, time(), merkle_root, target, 0)
+        candidate_block = CandidateBlock(current_height, block_header, include_txs)
         mined_block = mine(candidate_block, False)
         blockchain.append(mined_block)
         transmit_to_network(mined_block)
